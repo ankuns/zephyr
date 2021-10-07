@@ -345,13 +345,37 @@ void z_nrf_rtc_timer_set(int32_t chan, uint64_t target_time,
 {
 	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
 
+	bool key;
+	uint32_t overflow;
+	uint32_t counter;
+	uint64_t curr_time;
 	uint32_t cc_value = target_time_to_cc(target_time);
 
-	bool key = z_nrf_rtc_timer_compare_int_lock(chan);
+	overflow_and_counter_get(&overflow, &counter);
+	curr_time = overflow_and_counter_to_target_time(overflow, counter);
 
-	compare_set(chan, cc_value, handler, user_data);
+	if (curr_time < target_time) {
+		bool key = z_nrf_rtc_timer_compare_int_lock(chan);
 
-	z_nrf_rtc_timer_compare_int_unlock(chan, key);
+		if (cc_value != cc_data[chan].target_cc) {
+			compare_set(chan, cc_value, handler, user_data);
+		} else {
+			cc_data[chan].callback = handler;
+			cc_data[chan].user_context = user_data;
+		}
+
+		z_nrf_rtc_timer_compare_int_unlock(chan, key);
+	} else {
+		key = z_nrf_rtc_timer_compare_int_lock(chan);
+
+		cc_data[chan].callback = handler;
+		cc_data[chan].user_context = user_data;
+		cc_data[chan].target_cc = cc_value;
+
+		z_nrf_rtc_timer_compare_int_unlock(chan, key);
+
+		NVIC_SetPendingIRQ(RTC_IRQn);
+	}
 }
 
 static void sys_clock_timeout_handler(int32_t chan,
