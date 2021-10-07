@@ -68,19 +68,19 @@ static void inject_overflow(void)
 	}
 }
 
-static void timeout_handler(int32_t id, uint64_t target_time, void *user_data)
+static void timeout_handler(int32_t id, uint64_t expire_time, void *user_data)
 {
 	struct test_data *data = user_data;
 	uint64_t now = z_nrf_rtc_timer_read();
-	uint64_t diff = (now - target_time);
+	uint64_t diff = (now - expire_time);
 
 	zassert_true(diff <= data->delay,
 		"Handler called in wrong time (%llu), set time: %llu, "
 		"got time: %llu",
-		now, data->target_time, target_time);
+		now, data->target_time, expire_time);
 
-	if ((target_time >= data->target_time) &&
-	    (target_time <= (data->target_time + data->window))) {
+	if ((expire_time >= data->target_time) &&
+	    (expire_time <= (data->target_time + data->window))) {
 		data->err = 0;
 	}
 	timeout_handler_cnt++;
@@ -208,7 +208,7 @@ static void test_get_ticks(void)
 }
 
 
-static void sched_handler(int32_t id, uint64_t target_time, void *user_data)
+static void sched_handler(int32_t id, uint64_t expire_time, void *user_data)
 {
 	int64_t now = sys_clock_tick_get();
 	int rtc_ticks_now =
@@ -216,7 +216,7 @@ static void sched_handler(int32_t id, uint64_t target_time, void *user_data)
 	uint64_t *evt_uptime_us = user_data;
 
 	*evt_uptime_us =
-	    k_ticks_to_us_floor64(now - (rtc_ticks_now - target_time));
+	    k_ticks_to_us_floor64(now - (rtc_ticks_now - expire_time));
 }
 
 static void test_absolute_scheduling(void)
@@ -347,13 +347,13 @@ static void test_resetting_cc(void)
 	z_nrf_rtc_timer_chan_free(chan);
 }
 
-static void overflow_sched_handler(int32_t id, uint64_t target_time,
+static void overflow_sched_handler(int32_t id, uint64_t expire_time,
 				   void *user_data)
 {
 	uint64_t now = z_nrf_rtc_timer_read();
 	uint64_t *evt_uptime = user_data;
 
-	*evt_uptime = now - target_time;
+	*evt_uptime = now - expire_time;
 }
 
 /* This test is to be executed as the last, due to interference in overflow

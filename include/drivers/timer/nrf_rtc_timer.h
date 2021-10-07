@@ -16,7 +16,7 @@ extern "C" {
 #define NRF_RTC_TIMER_MAX_SCHEDULE_SPAN (BIT(23) - 1)
 
 typedef void (*z_nrf_rtc_timer_compare_handler_t)(int32_t id,
-						uint64_t cc_value,
+						uint64_t expire_time,
 						void *user_data);
 
 /** @brief Allocate RTC compare channel.

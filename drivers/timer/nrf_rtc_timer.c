@@ -355,10 +355,10 @@ void z_nrf_rtc_timer_set(int32_t chan, uint64_t target_time,
 }
 
 static void sys_clock_timeout_handler(int32_t chan,
-				      uint64_t cc_value,
+				      uint64_t expire_time,
 				      void *user_data)
 {
-	uint32_t dticks = counter_sub(cc_value, last_count) / CYC_PER_TICK;
+	uint32_t dticks = counter_sub(expire_time, last_count) / CYC_PER_TICK;
 
 	last_count += dticks * CYC_PER_TICK;
 
