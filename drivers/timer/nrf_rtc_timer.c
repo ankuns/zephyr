@@ -380,7 +380,6 @@ static void process_channel(int32_t chan)
 	    nrf_rtc_event_check(RTC, RTC_CHANNEL_EVENT_ADDR(chan))) {
 		uint32_t counter;
 		uint32_t overflow;
-		uint64_t curr_time;
 		void *user_context;
 		uint32_t mcu_critical_state;
 		z_nrf_rtc_timer_compare_handler_t handler = NULL;
@@ -389,8 +388,6 @@ static void process_channel(int32_t chan)
 		event_disable(chan);
 		overflow_and_counter_get(&overflow, &counter);
 
-		curr_time =
-		    overflow_and_counter_to_target_time(overflow, counter);
 
 		/* This critical section is used to provide atomic access to
 		 * cc_data structure and prevent higher priority contexts
@@ -412,6 +409,9 @@ static void process_channel(int32_t chan)
 		__set_PRIMASK(mcu_critical_state);
 
 		if (handler) {
+			uint64_t curr_time =
+				overflow_and_counter_to_target_time(overflow,
+					counter);
 			handler(chan, curr_time, user_context);
 		}
 	}
