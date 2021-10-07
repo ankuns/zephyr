@@ -381,10 +381,9 @@ static void process_channel(int32_t chan)
 		uint32_t counter;
 		uint32_t overflow;
 		uint64_t curr_time;
-		z_nrf_rtc_timer_compare_handler_t handler;
-		bool shall_execute_handler = false;
 		void *user_context;
 		uint32_t mcu_critical_state;
+		z_nrf_rtc_timer_compare_handler_t handler = NULL;
 
 		event_clear(chan);
 		event_disable(chan);
@@ -408,13 +407,11 @@ static void process_channel(int32_t chan)
 			handler = cc_data[chan].callback;
 			user_context = cc_data[chan].user_context;
 			cc_data[chan].callback = NULL;
-
-			shall_execute_handler = handler != NULL;
 		}
 
 		__set_PRIMASK(mcu_critical_state);
 
-		if (shall_execute_handler) {
+		if (handler) {
 			handler(chan, curr_time, user_context);
 		}
 	}
