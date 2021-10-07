@@ -399,8 +399,8 @@ static void process_channel(int32_t chan)
 		/* If target_cc is in the past or is equal to current counter
 		 * value, execute the handler.
 		 */
-		if (counter_sub(cc_data[chan].target_cc, counter + 1)
-		    > COUNTER_HALF_SPAN) {
+		if (counter_sub(counter, cc_data[chan].target_cc)
+		    < COUNTER_HALF_SPAN) {
 			handler = cc_data[chan].callback;
 			user_context = cc_data[chan].user_context;
 			cc_data[chan].callback = NULL;
