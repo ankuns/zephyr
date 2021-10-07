@@ -345,9 +345,9 @@ void z_nrf_rtc_timer_set(int32_t chan, uint64_t target_time,
 {
 	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
 
-	bool key = z_nrf_rtc_timer_compare_int_lock(chan);
-
 	uint32_t cc_value = target_time_to_cc(target_time);
+
+	bool key = z_nrf_rtc_timer_compare_int_lock(chan);
 
 	compare_set(chan, cc_value, handler, user_data);
 
