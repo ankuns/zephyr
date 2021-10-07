@@ -248,23 +248,6 @@ void z_nrf_rtc_timer_compare_int_unlock(int32_t chan, bool key)
 	}
 }
 
-atomic_t z_nrf_rtc_timer_overflow_int_lock(void)
-{
-	atomic_val_t prev = atomic_set(&overflow_int, 0);
-
-	nrf_rtc_int_disable(RTC, NRF_RTC_INT_OVERFLOW_MASK);
-
-	return prev;
-}
-
-void z_nrf_rtc_timer_overflow_int_unlock(bool key)
-{
-	if (key) {
-		atomic_set(&overflow_int, 1);
-		nrf_rtc_int_enable(RTC, NRF_RTC_INT_OVERFLOW_MASK);
-	}
-}
-
 uint32_t z_nrf_rtc_timer_compare_read(int32_t chan)
 {
 	__ASSERT_NO_MSG(chan < CHAN_COUNT);

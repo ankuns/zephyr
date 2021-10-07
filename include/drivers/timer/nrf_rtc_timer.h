@@ -70,22 +70,6 @@ bool z_nrf_rtc_timer_compare_int_lock(int32_t chan);
  */
 void z_nrf_rtc_timer_compare_int_unlock(int32_t chan, bool key);
 
-/** @brief Safely disable overflow event interrupt.
- *
- * Function returns key indicating whether interrupt was already disabled.
- *
- * @return key passed to @ref z_nrf_rtc_timer_overflow_int_unlock.
- */
-bool z_nrf_rtc_timer_overflow_int_lock(void);
-
-/** @brief Safely enable overflow event interrupt.
- *
- * Event interrupt is conditionally enabled based on @p key.
- *
- * @param key Key returned by @ref z_nrf_rtc_timer_overflow_int_lock.
- */
-void z_nrf_rtc_timer_overflow_int_unlock(bool key);
-
 /** @brief Read compare register value.
  *
  * @param chan Channel ID between 0 and CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT.
