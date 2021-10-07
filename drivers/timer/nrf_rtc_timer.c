@@ -41,6 +41,7 @@ struct z_nrf_rtc_timer_chan_data {
 	z_nrf_rtc_timer_compare_handler_t callback;
 	void *user_context;
 	uint32_t target_cc;
+	volatile bool force_isr;
 };
 
 static struct z_nrf_rtc_timer_chan_data cc_data[CHAN_COUNT];
@@ -245,6 +246,10 @@ void z_nrf_rtc_timer_compare_int_unlock(int32_t chan, bool key)
 	if (key) {
 		atomic_or(&int_mask, BIT(chan));
 		nrf_rtc_int_enable(RTC, RTC_CHANNEL_INT_MASK(chan));
+		if (cc_data[chan].force_isr)
+		{
+			NVIC_SetPendingIRQ(RTC_IRQn);
+		}
 	}
 }
 
@@ -371,10 +376,9 @@ void z_nrf_rtc_timer_set(int32_t chan, uint64_t target_time,
 		cc_data[chan].callback = handler;
 		cc_data[chan].user_context = user_data;
 		cc_data[chan].target_cc = cc_value;
+		cc_data[chan].force_isr = true;    // See side effect in z_nrf_rtc_timer_compare_int_unlock
 
 		z_nrf_rtc_timer_compare_int_unlock(chan, key);
-
-		NVIC_SetPendingIRQ(RTC_IRQn);
 	}
 }
 
@@ -398,20 +402,37 @@ static void sys_clock_timeout_handler(int32_t chan,
 						dticks : (dticks > 0));
 }
 
+static bool channel_processing_check_and_clear(int32_t chan)
+{
+	bool r = false;
+	uint32_t mcu_critical_state = __get_PRIMASK();
+
+	__disable_irq();
+
+	if (nrf_rtc_int_enable_check(RTC, RTC_CHANNEL_INT_MASK(chan)))
+	{
+		// The processing of channel can be caused by cc match or be forced
+		r = cc_data[chan].force_isr || nrf_rtc_event_check(RTC, RTC_CHANNEL_EVENT_ADDR(chan));
+		cc_data[chan].force_isr = false;
+		nrf_rtc_event_clear(RTC, RTC_CHANNEL_EVENT_ADDR(chan);
+		nrf_rtc_event_disable(RTC, RTC_CHANNEL_INT_MASK(chan));
+		__DMB();
+	}
+	__set_PRIMASK(mcu_critical_state);
+
+	return r;
+}
+
 static void process_channel(int32_t chan)
 {
-	if (nrf_rtc_int_enable_check(RTC, RTC_CHANNEL_INT_MASK(chan)) &&
-	    nrf_rtc_event_check(RTC, RTC_CHANNEL_EVENT_ADDR(chan))) {
+	if (channel_processing_check_and_clear(chan)) {
 		uint32_t counter;
 		uint32_t overflow;
 		void *user_context;
 		uint32_t mcu_critical_state;
 		z_nrf_rtc_timer_compare_handler_t handler = NULL;
 
-		event_clear(chan);
-		event_disable(chan);
 		overflow_and_counter_get(&overflow, &counter);
-
 
 		/* This critical section is used to provide atomic access to
 		 * cc_data structure and prevent higher priority contexts
