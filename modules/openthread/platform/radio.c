@@ -317,8 +317,19 @@ void transmit_message(struct k_work *tx_job)
 		uint64_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
 				 sTransmitFrame.mInfo.mTxInfo.mTxDelay;
 		net_pkt_set_txtime(tx_pkt, NSEC_PER_USEC * tx_at);
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+		/* This value could be obtained by some OpenThread specific macro, function call or
+		 * from sTransmitFrame.
+		 */
+		uint8_t extra_cca_attempts = 4;
+		z_ieee802154_nrf5_extra_cca_attempts_set(radio_dev, extra_cca_attempts);
+#endif
 		tx_err =
 			radio_api->tx(radio_dev, IEEE802154_TX_MODE_TXTIME_CCA, tx_pkt, tx_payload);
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+		/* Restore original value */
+		z_ieee802154_nrf5_extra_cca_attempts_set(radio_dev, 0);
+#endif
 	} else if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
 		if (radio_api->get_capabilities(radio_dev) & IEEE802154_HW_CSMA) {
 			tx_err = radio_api->tx(radio_dev, IEEE802154_TX_MODE_CSMA_CA, tx_pkt,
