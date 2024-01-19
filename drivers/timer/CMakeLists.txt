@@ -24,7 +24,39 @@ zephyr_library_sources_ifdef(CONFIG_MCUX_GPT_TIMER mcux_gpt_timer.c)
 zephyr_library_sources_ifdef(CONFIG_MIPS_CP0_TIMER mips_cp0_timer.c)
 zephyr_library_sources_ifdef(CONFIG_NATIVE_POSIX_TIMER native_posix_timer.c)
 zephyr_library_sources_ifdef(CONFIG_NPCX_ITIM_TIMER npcx_itim_timer.c)
-zephyr_library_sources_ifdef(CONFIG_NRF_RTC_TIMER nrf_rtc_timer.c)
+
+if (CONFIG_NRF_RTC_TIMER)
+    zephyr_library_sources_ifdef(CONFIG_NRF_RTC_TIMER nrf_rtc_timer.c)
+
+    # Calculate the K_NRF_RTC_TIMER_USER_CHAN_COUNT based on distributed individual requirements.
+    # Initially use value of CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT.
+    set(total ${CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT})
+
+    # Import all requirements NRF_RTC_TIMER_USER_CHAN_COUNT_ADD_*
+    # that increment the K_NRF_RTC_TIMER_USER_CHAN_COUNT
+    set(keys_list "")
+    import_kconfig(CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT_ADD_ ${DOTCONFIG} keys_list)
+
+    foreach(vkey ${keys_list})
+        math(EXPR total "${total} + ${${vkey}}")
+    endforeach()
+
+    # Import all requirements NRF_RTC_TIMER_USER_CHAN_COUNT_MIN_*
+    # that ensure the minimum value of K_NRF_RTC_TIMER_USER_CHAN_COUNT
+    set(keys_list "")
+    import_kconfig(CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT_MIN_ ${DOTCONFIG} keys_list)
+    foreach(vkey ${keys_list})
+        if ( ${${vkey}} GREATER ${total})
+            set(total ${${vkey}})
+        endif()
+    endforeach()
+
+    message(STATUS "Calculated K_NRF_RTC_TIMER_USER_CHAN_COUNT=${total}")
+
+    # zephyr_library_compile_definitions(K_NRF_RTC_TIMER_USER_CHAN_COUNT=${total})
+    zephyr_compile_definitions(K_NRF_RTC_TIMER_USER_CHAN_COUNT=${total})
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_RCAR_CMT_TIMER rcar_cmt_timer.c)
 zephyr_library_sources_ifdef(CONFIG_RISCV_MACHINE_TIMER riscv_machine_timer.c)
 zephyr_library_sources_ifdef(CONFIG_RV32M1_LPTMR_TIMER rv32m1_lptmr_timer.c)
