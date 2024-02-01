@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: ankuns
+      url-base: https://github.com/ankuns
     - name: babblesim
       url-base: https://github.com/BabbleSim
 
@@ -183,7 +185,8 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 4362d0fcdbac80942212bffc999654beac7ab30e
+      remote: ankuns
+      revision: feature/KRKNWK-18335_deploy_with_nrf54l
       path: modules/hal/nordic
       groups:
         - hal
