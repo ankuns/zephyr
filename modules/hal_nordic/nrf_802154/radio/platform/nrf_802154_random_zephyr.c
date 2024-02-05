@@ -19,6 +19,7 @@ static uint32_t next(void)
 
 void nrf_802154_random_init(void)
 {
+#if DT_HAS_CHOSEN(zephyr_entropy)
 	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 	int err;
 
@@ -28,6 +29,13 @@ void nrf_802154_random_init(void)
 		err = entropy_get_entropy(dev, (uint8_t *)&state, sizeof(state));
 		__ASSERT_NO_MSG(err == 0);
 	} while (state == 0);
+#else
+	/* As a fallback, to get compiled let's pretend we have entropy source which gave us this value.
+	 * It is technically incorrect because all nodes will have the same pseud-random sequence, but
+	 * at least allows to compile.
+	 */
+	state = 1;
+#endif
 }
 
 void nrf_802154_random_deinit(void)
