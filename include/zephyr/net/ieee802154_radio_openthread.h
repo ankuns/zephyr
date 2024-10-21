@@ -14,6 +14,9 @@
 
 #include <zephyr/net/ieee802154_radio.h>
 
+/** Bit number starting the OpenThread specific capabilities of ieee802154 driver. */
+#define IEEE802154_OPENTHREAD_HW_CAPS_BITS_START IEEE802154_HW_CAPS_BITS_PRIV_START
+
 /**
  *  OpenThread specific capabilities of ieee802154 driver.
  *  This type extends @ref ieee802154_hw_caps.
@@ -22,7 +25,11 @@ enum ieee802154_openthread_hw_caps {
 	/** Capability to transmit with @ref IEEE802154_OPENTHREAD_TX_MODE_TXTIME_MULTIPLE_CCA
 	 *  mode.
 	 */
-	IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA = BIT(IEEE802154_HW_CAPS_BITS_PRIV_START),
+	IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA = BIT(IEEE802154_OPENTHREAD_HW_CAPS_BITS_START),
+
+	/** Capability to support CST-related features.
+	 */
+	IEEE802154_OPENTHREAD_HW_CST = BIT(IEEE802154_OPENTHREAD_HW_CAPS_BITS_START + 1),
 };
 
 /** @brief TX mode */
@@ -77,7 +84,19 @@ enum ieee802154_openthread_config_type {
 	 *  @ref IEEE802154_OPENTHREAD_TX_MODE_TXTIME_MULTIPLE_CCA.
 	 *  Requires IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA capability.
 	 */
-	IEEE802154_OPENTHREAD_CONFIG_MAX_EXTRA_CCA_ATTEMPTS  = IEEE802154_CONFIG_PRIV_START
+	IEEE802154_OPENTHREAD_CONFIG_MAX_EXTRA_CCA_ATTEMPTS  = IEEE802154_CONFIG_PRIV_START,
+
+	/** Configures the CST period of a device.
+	 *
+	 *  Requires IEEE802154_OPENTHREAD_HW_CST capability.
+	 */
+	IEEE802154_OPENTHREAD_CONFIG_CST_PERIOD,
+
+	/** Configure a point in time at which a TX frame is expected to be transmitted.
+	 *
+	 *  Requires IEEE802154_OPENTHREAD_HW_CST capability.
+	 */
+	IEEE802154_OPENTHREAD_CONFIG_EXPECTED_TX_TIME,
 };
 
 /**
@@ -103,6 +122,18 @@ struct ieee802154_openthread_config {
 		 *  requested with mode @ref IEEE802154_OPENTHREAD_TX_MODE_TXTIME_MULTIPLE_CCA.
 		 */
 		uint8_t max_extra_cca_attempts;
+
+		/** ``IEEE802154_OPENTHREAD_CONFIG_CST_PERIOD``
+		 *
+		 *  The CST period (in CPU byte order).
+		 */
+		uint32_t cst_period;
+
+		/** ``IEEE802154_OPENTHREAD_CONFIG_EXPECTED_TX_TIME``
+		 *
+		 *  A point in time at which a TX frame is expected to be transmitted.
+		 */
+		net_time_t expected_tx_time;
 	};
 };
 
